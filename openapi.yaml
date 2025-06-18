@@ -2,7 +2,14 @@ openapi: 3.0.0
 info:
   title: Reply.io API
   version: 2.0.0
-  description: API for managing schedules in Reply.io
+  description: |
+    API for managing schedules in Reply.io
+    
+    **⚠️ Important Notes:**
+    - This API requires authentication via API key
+    - CORS is not enabled - testing from browser will fail
+    - Use cURL, Postman, or server-side applications for actual requests
+    - The "Try it out" feature is disabled for security reasons
 
 servers:
   - url: https://api.reply.io/v2
@@ -12,7 +19,24 @@ paths:
   /schedules:
     post:
       summary: Create a new schedule
-      description: Creates a new schedule with specified timing configurations
+      description: |
+        Creates a new schedule with specified timing configurations.
+        
+        **Example cURL request:**
+        ```bash
+        curl --location 'https://api.reply.io/v2/schedules' \
+        --header 'x-api-key: YOUR_API_KEY_HERE' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "name": "My Campaign Schedule",
+          "excludeHolidays": true,
+          "timezoneId": "Pacific Standard Time",
+          "useProspectTimezone": true,
+          "useFollowUpSchedule": true,
+          "mainTimings": [...],
+          "followUpTimings": [...]
+        }'
+        ```
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -21,68 +45,135 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateScheduleRequest'
-            example:
-              name: "My Campaign Schedule"
-              excludeHolidays: true
-              timezoneId: "Pacific Standard Time"
-              useProspectTimezone: true
-              useFollowUpSchedule: true
-              mainTimings:
-                - weekDay: "Friday"
-                  isActive: true
-                  timeRanges:
-                    - fromTime:
-                        hour: 0
-                        minute: 45
-                      toTime:
-                        hour: 9
-                        minute: 0
-                - weekDay: "Tuesday"
-                  isActive: true
-                  timeRanges:
-                    - fromTime:
-                        hour: 9
-                        minute: 0
-                      toTime:
-                        hour: 17
-                        minute: 30
-                - weekDay: "Wednesday"
-                  isActive: true
-                  timeRanges:
-                    - fromTime:
-                        hour: 9
-                        minute: 0
-                      toTime:
-                        hour: 23
-                        minute: 59
-              followUpTimings:
-                - weekDay: "Tuesday"
-                  isActive: true
-                  timeRanges:
-                    - fromTime:
-                        hour: 12
-                        minute: 0
-                      toTime:
-                        hour: 16
-                        minute: 0
-                - weekDay: "Friday"
-                  isActive: true
-                  timeRanges:
-                    - fromTime:
-                        hour: 12
-                        minute: 0
-                      toTime:
-                        hour: 16
-                        minute: 0
+            examples:
+              basic_schedule:
+                summary: Basic Schedule Example
+                description: A simple schedule with main timings
+                value:
+                  name: "My Campaign Schedule"
+                  excludeHolidays: true
+                  timezoneId: "Pacific Standard Time"
+                  useProspectTimezone: true
+                  useFollowUpSchedule: true
+                  mainTimings:
+                    - weekDay: "Monday"
+                      isActive: true
+                      timeRanges:
+                        - fromTime:
+                            hour: 9
+                            minute: 0
+                          toTime:
+                            hour: 17
+                            minute: 0
+                    - weekDay: "Tuesday"
+                      isActive: true
+                      timeRanges:
+                        - fromTime:
+                            hour: 9
+                            minute: 0
+                          toTime:
+                            hour: 17
+                            minute: 30
+                  followUpTimings:
+                    - weekDay: "Tuesday"
+                      isActive: true
+                      timeRanges:
+                        - fromTime:
+                            hour: 12
+                            minute: 0
+                          toTime:
+                            hour: 16
+                            minute: 0
+              weekend_schedule:
+                summary: Weekend Schedule Example
+                description: Schedule that includes weekend days
+                value:
+                  name: "Weekend Campaign"
+                  excludeHolidays: false
+                  timezoneId: "Eastern Standard Time"
+                  useProspectTimezone: false
+                  useFollowUpSchedule: true
+                  mainTimings:
+                    - weekDay: "Saturday"
+                      isActive: true
+                      timeRanges:
+                        - fromTime:
+                            hour: 10
+                            minute: 0
+                          toTime:
+                            hour: 14
+                            minute: 0
+                    - weekDay: "Sunday"
+                      isActive: true
+                      timeRanges:
+                        - fromTime:
+                            hour: 12
+                            minute: 0
+                          toTime:
+                            hour: 18
+                            minute: 0
+                  followUpTimings:
+                    - weekDay: "Saturday"
+                      isActive: true
+                      timeRanges:
+                        - fromTime:
+                            hour: 11
+                            minute: 0
+                          toTime:
+                            hour: 15
+                            minute: 0
       responses:
         '200':
           description: Schedule created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Unique schedule ID
+                    example: "sch_abc123def456"
+                  name:
+                    type: string
+                    example: "My Campaign Schedule"
+                  status:
+                    type: string
+                    example: "active"
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T10:30:00Z"
         '400':
           description: Bad request - invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid input"
+                message: "The field 'name' is required"
+                code: "VALIDATION_ERROR"
         '401':
-          description: Unauthorized - invalid API key
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Invalid API key provided"
+                code: "INVALID_API_KEY"
         '422':
           description: Unprocessable entity - validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Validation failed"
+                message: "Invalid timezone identifier"
+                code: "INVALID_TIMEZONE"
 
 components:
   securitySchemes:
@@ -90,7 +181,10 @@ components:
       type: apiKey
       in: header
       name: x-api-key
-      description: Your Reply.io API key
+      description: |
+        Your Reply.io API key. Get it from your Reply.io account settings.
+        
+        **Example:** `x-api-key: your_api_key_here`
 
   schemas:
     CreateScheduleRequest:
@@ -100,34 +194,61 @@ components:
       properties:
         name:
           type: string
-          description: Name of the schedule
+          description: Name of the schedule (must be unique)
+          minLength: 1
+          maxLength: 100
           example: "My Campaign Schedule"
         excludeHolidays:
           type: boolean
           description: Whether to exclude holidays from scheduling
           default: false
+          example: true
         timezoneId:
           type: string
-          description: Timezone identifier
+          description: |
+            Timezone identifier (Windows timezone format).
+            Common values: "Pacific Standard Time", "Eastern Standard Time", "Central Standard Time", "Mountain Standard Time"
           example: "Pacific Standard Time"
         useProspectTimezone:
           type: boolean
-          description: Whether to use prospect's timezone
+          description: Whether to use prospect's timezone instead of schedule timezone
           default: false
+          example: true
         useFollowUpSchedule:
           type: boolean
-          description: Whether to use separate follow-up schedule
+          description: Whether to use separate follow-up schedule timings
           default: false
+          example: true
         mainTimings:
           type: array
-          description: Main timing configuration for each day
+          description: Main timing configuration for each day of the week
           items:
             $ref: '#/components/schemas/DayTiming'
+          example:
+            - weekDay: "Monday"
+              isActive: true
+              timeRanges:
+                - fromTime:
+                    hour: 9
+                    minute: 0
+                  toTime:
+                    hour: 17
+                    minute: 0
         followUpTimings:
           type: array
-          description: Follow-up timing configuration for each day
+          description: Follow-up timing configuration (only used if useFollowUpSchedule is true)
           items:
             $ref: '#/components/schemas/DayTiming'
+          example:
+            - weekDay: "Monday"
+              isActive: true
+              timeRanges:
+                - fromTime:
+                    hour: 12
+                    minute: 0
+                  toTime:
+                    hour: 16
+                    minute: 0
 
     DayTiming:
       type: object
@@ -139,14 +260,29 @@ components:
           type: string
           enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
           description: Day of the week
+          example: "Monday"
         isActive:
           type: boolean
           description: Whether this day is active for scheduling
+          example: true
         timeRanges:
           type: array
-          description: Time ranges for this day
+          description: Time ranges for this day (can be multiple ranges per day)
           items:
             $ref: '#/components/schemas/TimeRange'
+          example:
+            - fromTime:
+                hour: 9
+                minute: 0
+              toTime:
+                hour: 12
+                minute: 0
+            - fromTime:
+                hour: 13
+                minute: 0
+              toTime:
+                hour: 17
+                minute: 0
 
     TimeRange:
       type: object
@@ -169,11 +305,33 @@ components:
           type: integer
           minimum: 0
           maximum: 23
-          description: Hour in 24-hour format
+          description: Hour in 24-hour format (0-23)
+          example: 9
         minute:
           type: integer
           minimum: 0
           maximum: 59
-          description: Minute
-x-swagger-ui-config:
-  tryItOutEnabled: false
+          description: Minute (0-59)
+          example: 30
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Validation Error"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "The field 'name' is required"
+        code:
+          type: string
+          description: Error code for programmatic handling
+          example: "FIELD_REQUIRED"
+
+# Swagger UI Configuration
+x-tagGroups:
+  - name: Schedules
+    tags:
+      - schedules
