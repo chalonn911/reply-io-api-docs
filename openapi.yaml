@@ -1,0 +1,177 @@
+openapi: 3.0.0
+info:
+  title: Reply.io API
+  version: 2.0.0
+  description: API for managing schedules in Reply.io
+
+servers:
+  - url: https://api.reply.io/v2
+    description: Production server
+
+paths:
+  /schedules:
+    post:
+      summary: Create a new schedule
+      description: Creates a new schedule with specified timing configurations
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleRequest'
+            example:
+              name: "My Campaign Schedule"
+              excludeHolidays: true
+              timezoneId: "Pacific Standard Time"
+              useProspectTimezone: true
+              useFollowUpSchedule: true
+              mainTimings:
+                - weekDay: "Friday"
+                  isActive: true
+                  timeRanges:
+                    - fromTime:
+                        hour: 0
+                        minute: 45
+                      toTime:
+                        hour: 9
+                        minute: 0
+                - weekDay: "Tuesday"
+                  isActive: true
+                  timeRanges:
+                    - fromTime:
+                        hour: 9
+                        minute: 0
+                      toTime:
+                        hour: 17
+                        minute: 30
+                - weekDay: "Wednesday"
+                  isActive: true
+                  timeRanges:
+                    - fromTime:
+                        hour: 9
+                        minute: 0
+                      toTime:
+                        hour: 23
+                        minute: 59
+              followUpTimings:
+                - weekDay: "Tuesday"
+                  isActive: true
+                  timeRanges:
+                    - fromTime:
+                        hour: 12
+                        minute: 0
+                      toTime:
+                        hour: 16
+                        minute: 0
+                - weekDay: "Friday"
+                  isActive: true
+                  timeRanges:
+                    - fromTime:
+                        hour: 12
+                        minute: 0
+                      toTime:
+                        hour: 16
+                        minute: 0
+      responses:
+        '200':
+          description: Schedule created successfully
+        '400':
+          description: Bad request - invalid input data
+        '401':
+          description: Unauthorized - invalid API key
+        '422':
+          description: Unprocessable entity - validation errors
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Your Reply.io API key
+
+  schemas:
+    CreateScheduleRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the schedule
+          example: "My Campaign Schedule"
+        excludeHolidays:
+          type: boolean
+          description: Whether to exclude holidays from scheduling
+          default: false
+        timezoneId:
+          type: string
+          description: Timezone identifier
+          example: "Pacific Standard Time"
+        useProspectTimezone:
+          type: boolean
+          description: Whether to use prospect's timezone
+          default: false
+        useFollowUpSchedule:
+          type: boolean
+          description: Whether to use separate follow-up schedule
+          default: false
+        mainTimings:
+          type: array
+          description: Main timing configuration for each day
+          items:
+            $ref: '#/components/schemas/DayTiming'
+        followUpTimings:
+          type: array
+          description: Follow-up timing configuration for each day
+          items:
+            $ref: '#/components/schemas/DayTiming'
+
+    DayTiming:
+      type: object
+      required:
+        - weekDay
+        - isActive
+      properties:
+        weekDay:
+          type: string
+          enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+          description: Day of the week
+        isActive:
+          type: boolean
+          description: Whether this day is active for scheduling
+        timeRanges:
+          type: array
+          description: Time ranges for this day
+          items:
+            $ref: '#/components/schemas/TimeRange'
+
+    TimeRange:
+      type: object
+      required:
+        - fromTime
+        - toTime
+      properties:
+        fromTime:
+          $ref: '#/components/schemas/Time'
+        toTime:
+          $ref: '#/components/schemas/Time'
+
+    Time:
+      type: object
+      required:
+        - hour
+        - minute
+      properties:
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+          description: Hour in 24-hour format
+        minute:
+          type: integer
+          minimum: 0
+          maximum: 59
+          description: Minute
