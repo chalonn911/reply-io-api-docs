@@ -175,3 +175,5 @@ components:
           minimum: 0
           maximum: 59
           description: Minute
+x-swagger-ui-config:
+  tryItOutEnabled: false
